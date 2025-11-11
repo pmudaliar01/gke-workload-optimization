@@ -14,7 +14,13 @@ jobs:
       GOOGLE_ZONE: us-central1-a
     steps:
     - uses: actions/checkout@v4
-
+    - name: Show inputs
+      run: |
+       echo "GOOGLE_PROJECT_ID=${GOOGLE_PROJECT_ID}"
+       # quick server-side validation that project exists for this principal
+       echo '${{ secrets.GCP_SA_KEY }}' > /tmp/sa.json
+       gcloud auth activate-service-account --key-file=/tmp/sa.json
+       gcloud projects describe "${GOOGLE_PROJECT_ID}" --format='value(projectId,projectNumber)'
     - id: auth
       uses: google-github-actions/auth@v2
       with:
