@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-main
+  namespace: lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: locust, role: main}
+  template:
+    metadata:
+      labels: {app: locust, role: main}
+    spec:
+      containers:
+      - name: locust
+        image: locustio/locust:2.30.0
+        args: ["-f","/locust/locustfile.py","--master","--web-port","8089"]
+        ports:
+        - containerPort: 8089
+        volumeMounts: [{ name: tasks, mountPath: /locust }]
+      volumes:
+      - name: tasks
+        configMap:
+          name: locust-tasks
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust-main
+  namespace: lab
+spec:
+  type: LoadBalancer
+  selector: {app: locust, role: main}
+  ports:
+  - port: 8089
+    targetPort: 8089

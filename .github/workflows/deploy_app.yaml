@@ -1,0 +1,35 @@
+name: deploy-app
+on:
+  workflow_dispatch:
+  push:
+    paths: ["k8s/**", "scripts/k8s_*.sh", ".github/workflows/deploy_app.yaml"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GOOGLE_ZONE: us-central1-a
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - uses: google-github-actions/setup-gcloud@v2
+
+    - name: Get cluster credentials
+      run: gcloud container clusters get-credentials test-cluster --zone "${GOOGLE_ZONE}" --project "${GOOGLE_PROJECT_ID}"
+
+    - name: Deploy core (Pod + NEG Service + Ingress)
+      run: bash scripts/k8s_apply_core.sh
+
+    - name: Deploy probe demos
+      run: bash scripts/k8s_probe_demos.sh
+
+    - name: Deploy Locust
+      run: bash scripts/k8s_locust_apply.sh
+
+    - name: Switch to Deployment + PDB
+      run: bash scripts/k8s_switch_to_deploy.sh

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust-workers
+  namespace: lab
+spec:
+  replicas: 5
+  selector:
+    matchLabels: {app: locust, role: worker}
+  template:
+    metadata:
+      labels: {app: locust, role: worker}
+    spec:
+      containers:
+      - name: worker
+        image: locustio/locust:2.30.0
+        args: ["-f","/locust/locustfile.py","--worker","--master-host","locust-main"]
+        volumeMounts: [{ name: tasks, mountPath: /locust }]
+      volumes:
+      - name: tasks
+        configMap:
+          name: locust-tasks

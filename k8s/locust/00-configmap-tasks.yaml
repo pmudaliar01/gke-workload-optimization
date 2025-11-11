@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-tasks
+  namespace: lab
+data:
+  locustfile.py: |
+    from locust import HttpUser, task, between
+    class FrontendUser(HttpUser):
+        wait_time = between(1, 2)
+        @task
+        def hit_root(self):
+            self.client.get("/")
