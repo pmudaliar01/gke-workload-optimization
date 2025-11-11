@@ -55,7 +55,8 @@ resource "google_container_node_pool" "default_pool" {
     oauth_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
     labels       = { env = "lab" }
     tags         = ["gke", "lab"]
-  }
+    disk_size_gb  = 50
+ }
 }
 
 output "cluster_name" { value = google_container_cluster.gke.name }
