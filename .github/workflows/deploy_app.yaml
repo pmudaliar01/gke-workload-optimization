@@ -1,3 +1,4 @@
+
 name: deploy-app
 on:
   workflow_dispatch:
@@ -17,25 +18,19 @@ jobs:
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    # Install gke auth plugin (+ kubectl) via setup-gcloud
     - uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-        version: '>= 488.0.0'
-        install_components: true
-        components: gke-gcloud-auth-plugin kubectl   # <-- important
+        version: '>= 488.0.0'   # recent gcloud
 
-    - name: Enable kubectl to use the plugin
-      run: echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> "$GITHUB_ENV"
+    - name: Install kubectl + GKE auth plugin
+      run: |
+        gcloud --quiet components update
+        gcloud --quiet components install kubectl gke-gcloud-auth-plugin
+        echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> "$GITHUB_ENV"
 
     - name: Get cluster credentials
       run: gcloud container clusters get-credentials test-cluster --zone "${GOOGLE_ZONE}" --project "${GOOGLE_PROJECT_ID}"
-
-    # (optional) sanity checks
-    - name: Check tooling
-      run: |
-        kubectl version --client
-        gcloud components list | grep -E 'gke-gcloud-auth-plugin.*Installed' || true
 
     - name: Deploy core (Pod + NEG Service + Ingress)
       run: bash scripts/k8s_apply_core.sh
@@ -48,4 +43,3 @@ jobs:
 
     - name: Switch to Deployment + PDB
       run: bash scripts/k8s_switch_to_deploy.sh
-
