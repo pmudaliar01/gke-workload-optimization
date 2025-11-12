@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: locust
-        image: locustio/locust:2.30.0
+        image: locustio/locust:2.31.5
         args: ["-f","/locust/locustfile.py","--master","--web-port","8089"]
         ports:
         - containerPort: 8089
