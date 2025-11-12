@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: worker
-        image: locustio/locust:2.30.0
+        image: locustio/locust:2.31.5
         args: ["-f","/locust/locustfile.py","--worker","--master-host","locust-main"]
         volumeMounts: [{ name: tasks, mountPath: /locust }]
       volumes:
