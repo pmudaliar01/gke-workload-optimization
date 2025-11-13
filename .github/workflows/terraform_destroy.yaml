@@ -22,6 +22,21 @@ jobs:
 
     - uses: hashicorp/setup-terraform@v3
 
-    - name: Destroy
-      run: bash scripts/infra_destroy.sh
+    # Debug: confirm files are present
+    - name: Show repo tree
+      run: |
+        pwd
+        ls -la
+        ls -la terraform
+        sed -n '1,120p' terraform/backend.tf || true
+
+    - name: Terraform Init (GCS backend, reconfigure)
+      run: terraform -chdir=terraform init -input=false -reconfigure
+
+    - name: Terraform Destroy
+      run: |
+        terraform -chdir=terraform destroy -auto-approve \
+          -var "project_id=${GOOGLE_PROJECT_ID}" \
+          -var "region=${GOOGLE_REGION}" \
+          -var "zone=${GOOGLE_ZONE}"
 
