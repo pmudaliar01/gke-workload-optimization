@@ -39,6 +39,7 @@ resource "google_container_cluster" "gke" {
   ip_allocation_policy {
     cluster_secondary_range_name  = "pods"
     services_secondary_range_name = "services"
+   deletion_protection = false
   }
 
   networking_mode = "VPC_NATIVE"
