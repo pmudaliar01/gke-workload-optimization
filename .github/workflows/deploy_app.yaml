@@ -1,9 +1,11 @@
-
 name: deploy-app
 on:
   workflow_dispatch:
   push:
-    paths: ["k8s/**", "scripts/k8s_*.sh", ".github/workflows/deploy_app.yaml"]
+    paths:
+      - "k8s/**"
+      - "scripts/k8s_*.sh"
+      - ".github/workflows/deploy_app.yaml"
 
 jobs:
   deploy:
@@ -12,34 +14,43 @@ jobs:
       GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       GOOGLE_ZONE: us-central1-a
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: google-github-actions/auth@v2
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        version: '>= 488.0.0'   # recent gcloud
+      - uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          version: '>= 488.0.0'
 
-    - name: Install kubectl + GKE auth plugin
-      run: |
-        gcloud --quiet components update
-        gcloud --quiet components install kubectl gke-gcloud-auth-plugin
-        echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> "$GITHUB_ENV"
+      - name: Install kubectl + GKE auth plugin
+        run: |
+          gcloud --quiet components update
+          gcloud --quiet components install kubectl gke-gcloud-auth-plugin
+          echo "USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> "$GITHUB_ENV"
 
-    - name: Get cluster credentials
-      run: gcloud container clusters get-credentials test-cluster --zone "${GOOGLE_ZONE}" --project "${GOOGLE_PROJECT_ID}"
+      - name: Ensure scripts are executable
+        run: chmod +x scripts/*.sh
 
-    - name: Deploy core (Pod + NEG Service + Ingress)
-      run: bash scripts/k8s_apply_core.sh
+      - name: Get cluster credentials
+        run: gcloud container clusters get-credentials test-cluster --zone "${GOOGLE_ZONE}" --project "${GOOGLE_PROJECT_ID}"
 
-    - name: Deploy probe demos
-      run: bash scripts/k8s_probe_demos.sh
+      - name: Deploy core (Pod + NEG Service + Ingress)
+        run: bash scripts/k8s_apply_core.sh
 
-    - name: Deploy Locust
-      run: bash scripts/k8s_locust_apply.sh
+      - name: Deploy probe demos
+        run: bash scripts/k8s_probe_demos.sh
 
-    - name: Switch to Deployment + PDB
-      run: bash scripts/k8s_switch_to_deploy.sh
+      - name: Deploy Locust
+        run: bash scripts/k8s_locust_apply.sh
+
+      - name: Switch to Deployment + PDB
+        run: bash scripts/k8s_switch_to_deploy.sh
+
+      - name: Show endpoints
+        run: |
+          kubectl -n lab get ingress gb-frontend-ingress -o wide
+          kubectl -n lab get svc locust-main -o wide
+
